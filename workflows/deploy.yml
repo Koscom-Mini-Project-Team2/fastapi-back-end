@@ -1,0 +1,33 @@
+# .github/workflows/deploy.yml
+name: Deploy FastAPI
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            cd ~/your-project-directory
+            git pull origin main
+            
+            # .env 파일 생성
+            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
+            
+            # 가상환경 활성화 & 의존성 설치
+            source venv/bin/activate
+            pip install -r requirements.txt
+            
+            # 서버 재시작
+            sudo systemctl restart fastapi
