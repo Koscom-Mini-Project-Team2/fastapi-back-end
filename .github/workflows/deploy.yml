@@ -1,0 +1,34 @@
+# .github/workflows/deploy.yml
+name: Deploy FastAPI
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            export PYENV_ROOT="$HOME/.pyenv"
+            export PATH="$PYENV_ROOT/bin:$PATH"
+            eval "$(pyenv init -)"
+            
+            cd ~/fastapi-back-end
+            git pull origin main
+            
+            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
+            
+            source venv/bin/activate
+            pip install -r requirements.txt
+            
+            systemctl restart fastapi
